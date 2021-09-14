@@ -1,0 +1,134 @@
+﻿<UserControl x:Class="ReceiverTestApp.Dialog.AddOrModifyTemplate"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
+			 xmlns:converters="clr-namespace:ReceiverTestApp.Converters"
+			 xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             mc:Ignorable="d" 
+             Height="540" Width="480">
+	<UserControl.Resources>
+		<converters:MultiObjToEnableConverter x:Key="MultiObjToEnableConverter" />
+	</UserControl.Resources>
+    <Grid>
+		<Grid.RowDefinitions>
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="Auto" />
+			<RowDefinition Height="1*" />
+			<RowDefinition Height="Auto" />
+		</Grid.RowDefinitions>
+		<Grid.ColumnDefinitions>
+			<ColumnDefinition Width="2*" />
+			<ColumnDefinition Width="1*" />
+		</Grid.ColumnDefinitions>
+		<TextBox Grid.Row="0" Grid.Column="0" 
+				 md:HintAssist.Hint="项目名称"
+				 FontSize="12" Margin="16 0 16 0"
+				 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+				 Text="{Binding Name,UpdateSourceTrigger=PropertyChanged}"
+				 VerticalAlignment="Center" />
+		<ComboBox Grid.Row="0" Grid.Column="1" 
+				  FontSize="14" Margin="0 8 16 0" 
+				  HorizontalAlignment="Stretch"
+				  VerticalAlignment="Stretch"
+				  VerticalContentAlignment="Center"
+				  md:HintAssist.Hint="测试场景"
+				  SelectedIndex="{Binding Source}">
+			<ComboBoxItem>信号模拟源</ComboBoxItem>
+			<ComboBoxItem>天线</ComboBoxItem>
+		</ComboBox>
+		<TextBox Grid.Row="1" Grid.Column="0" 
+				 md:HintAssist.Hint="定位文件路径"
+				 FontSize="12" Margin="16 0 16 0" IsReadOnly="True"
+				 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+				 Text="{Binding Location,UpdateSourceTrigger=PropertyChanged}"
+				 VerticalAlignment="Center" />
+		<Button Grid.Row="1" Grid.Column="1" Content="浏览"
+				Height="24" Width="48" FontSize="10" Padding="-8"
+				HorizontalAlignment="Left" VerticalAlignment="Bottom"
+				Click="LocationButton_Click"
+				Style="{DynamicResource MaterialDesignRaisedLightButton}" />
+		<TextBox Grid.Row="2" Grid.Column="0" 
+				 md:HintAssist.Hint="原始观测量文件路径"
+				 FontSize="12" Margin="16 0 16 0" IsReadOnly="True"
+				 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+				 Text="{Binding Measure,UpdateSourceTrigger=PropertyChanged}"
+				 VerticalAlignment="Center" />
+		<Button Grid.Row="2" Grid.Column="1" Content="浏览"
+				Height="24" Width="48" FontSize="10" Padding="-8"
+				HorizontalAlignment="Left" VerticalAlignment="Bottom"
+				Click="MeasureButton_Click"
+				Style="{DynamicResource MaterialDesignRaisedLightButton}" />
+		<TextBox Grid.Row="3" Grid.Column="0"
+				 md:HintAssist.Hint="指标要求"
+				 FontSize="12" Margin="16 0 16 0"
+				 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+				 Text="{Binding Target,UpdateSourceTrigger=PropertyChanged}"
+				 VerticalAlignment="Center" />
+		<TextBox Grid.Row="3" Grid.Column="1"
+				 md:HintAssist.Hint="循环次数"
+				  FontSize="12" Margin="0 0 16 0"
+				 Style="{StaticResource MaterialDesignFloatingHintTextBox}"
+				 Text="{Binding Loop,UpdateSourceTrigger=PropertyChanged}" />
+		<TextBox
+			Grid.Row="4" Grid.Column="0" Margin="16 16 16 0"
+			md:HintAssist.Hint="测试步骤" FontSize="12"
+			Style="{StaticResource MaterialDesignOutlinedTextFieldTextBox}"
+			VerticalAlignment="Stretch" AcceptsReturn="True" TextWrapping="Wrap"
+			VerticalScrollBarVisibility="Auto"
+			Text="{Binding Script,UpdateSourceTrigger=PropertyChanged}" />
+		<ScrollViewer x:Name="SignalListView" Grid.Row="4" Grid.Column="1" Margin="0 16 16 0">
+			<ItemsControl ItemsSource="{Binding Config.Signals}"  Grid.IsSharedSizeScope="True">
+				<ItemsControl.ItemTemplate>
+					<DataTemplate>
+						<Border x:Name="Border" Padding="4 0 0 4">
+							<CheckBox VerticalAlignment="Center" IsChecked="{Binding IsSelected}">
+								<TextBlock VerticalAlignment="Center" Margin="2 0 0 3"
+												   FontSize="12" Text="{Binding Name}" />
+							</CheckBox>
+						</Border>
+						<DataTemplate.Triggers>
+							<DataTrigger Binding="{Binding IsSelected}" Value="True">
+								<Setter TargetName="Border" Property="Background" Value="{DynamicResource MaterialDesignSelection}" />
+							</DataTrigger>
+						</DataTemplate.Triggers>
+					</DataTemplate>
+				</ItemsControl.ItemTemplate>
+			</ItemsControl>
+		</ScrollViewer>
+		<Grid Grid.Row="5" Grid.ColumnSpan="2">
+			<Grid.ColumnDefinitions>
+				<ColumnDefinition Width="1*" />
+				<ColumnDefinition Width="1*" />
+			</Grid.ColumnDefinitions>
+			<Button Grid.Column="1" Content="取消" Margin="16"
+				Style="{DynamicResource MaterialDesignRaisedLightButton}"
+				Command="{x:Static md:DialogHost.CloseDialogCommand}">
+				<Button.CommandParameter>
+					<sys:Boolean>False</sys:Boolean>
+				</Button.CommandParameter>
+			</Button>
+			<Button Grid.Column="0" Content="确认" Margin="16"
+				Style="{DynamicResource MaterialDesignRaisedLightButton}"
+				Click="SaveButton_Click">
+				<Button.IsEnabled>
+					<MultiBinding Converter="{StaticResource MultiObjToEnableConverter}">
+						<Binding Path="Name" />
+						<Binding Path="Location" />
+						<Binding Path="Measure" />
+						<Binding Path="Target" />
+						<Binding Path="Script" />
+						<Binding Path="Config.SignalSelected" />
+					</MultiBinding>
+				</Button.IsEnabled>
+				<Button.CommandParameter>
+					<sys:Boolean>True</sys:Boolean>
+				</Button.CommandParameter>
+			</Button>
+		</Grid>
+		<md:Snackbar Grid.Row="4" Grid.ColumnSpan="2" x:Name="Snackbar" MessageQueue="{md:MessageQueue}" />
+	</Grid>
+</UserControl>
