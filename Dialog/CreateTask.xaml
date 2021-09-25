@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:md="http://materialdesigninxaml.net/winfx/xaml/themes"
 		xmlns:converters="clr-namespace:ReceiverTestApp.Converters"
+		xmlns:domain="clr-namespace:ReceiverTestApp.Domain"
         mc:Ignorable="d" Height="480" Width="720" MaxWidth="900" Focusable="True">
 	<UserControl.Resources>
 		<converters:MultiObjToEnableConverter x:Key="MultiObjToEnableConverter" />
@@ -50,9 +51,9 @@
 								Style="{StaticResource MaterialDesignFloatingHintTextBox}">
 							<TextBox.Text>
 								<Binding Path="TaskName" UpdateSourceTrigger="PropertyChanged">
-									<!--<Binding.ValidationRules>
-										<domain:NotEmptyValidationRule ValidatesOnTargetUpdated="True" />
-									</Binding.ValidationRules>-->
+									<Binding.ValidationRules>
+										<domain:DupTaskNameRule ValidatesOnTargetUpdated="True" />
+									</Binding.ValidationRules>
 								</Binding>
 							</TextBox.Text>
 						</TextBox>

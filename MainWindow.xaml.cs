@@ -13,11 +13,14 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace ReceiverTestApp
 {
     public class MainWindowModel : PropertyNotifyObject
 	{
+        public string SelectedName { set; get; }
+
         public bool ShowContent
         {
             set { this.SetValue(x => x.ShowContent, value); }
@@ -35,6 +38,8 @@ namespace ReceiverTestApp
             set { this.SetValue(x => x.IsRunning, value); }
             get { return this.GetValue(x => x.IsRunning); }
         }
+
+        public bool IsPaused { set; get; }
 
         public TestTask Task
         {
@@ -79,7 +84,7 @@ namespace ReceiverTestApp
 	/// </summary>
 	public partial class MainWindow : MetroWindow
     {
-		private MainWindowModel DataModel = new MainWindowModel();
+		public static MainWindowModel DataModel = new MainWindowModel();
 
         private readonly MessageConfirm ConfirmDialog = new MessageConfirm();
 
@@ -108,11 +113,11 @@ namespace ReceiverTestApp
 
         protected override void OnClosed(EventArgs e)
         {
-            if (DataModel != null)
+            if (DataModel != null && DataModel.Task != null)
             {
-                foreach (var d in DataModel.Task.RunningDevices)
+                foreach (RunningDevice d in DataModel.Task.RunningDevices)
                 {
-                    if (d.Port.IsOpen)
+                    if (d.Port != null && d.Port.IsOpen)
                     {
                         d.Port.Close();
                     }
@@ -122,8 +127,8 @@ namespace ReceiverTestApp
 
         private async void Add_MenuItem_Click(object sender, RoutedEventArgs e)
 		{
-            var dialog = new CreateTask(DataModel);
-            await DialogHost.Show(dialog);
+            CreateTask dialog = new CreateTask(DataModel);
+            _ = await DialogHost.Show(dialog);
         }
 
         private void Close_MenuItem_Click(object sender, RoutedEventArgs e)
@@ -138,28 +143,51 @@ namespace ReceiverTestApp
             Environment.Exit(0);
         }
 
+        private async void About_MenuItem_Click(object sender, RoutedEventArgs e)
+        {
+            AboutDialog dialog = new AboutDialog();
+            _ = await DialogHost.Show(dialog);
+        }
+
         private void TreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
 		{
-			//_ = TestTaskTree.SelectedItem as TreeViewItem;
-			//TestTaskTree.ContextMenu = TestTaskTree.Resources["TaskContext"] as ContextMenu;
-			//switch (SelectedItem.Tag.ToString())
-			//{
-			//	case "Solution":
-					
-			//		break;
-			//	case "Folder":
-			//		TestTaskTree.ContextMenu = TestTaskTree.Resources["FolderContext"] as System.Windows.Controls.ContextMenu;
-			//		break;
-			//}
-		}
+            TestTaskTree.ContextMenu = TestTaskTree.SelectedItem is TestTask ? TestTaskTree.Resources["TaskContext"] as ContextMenu : null;
+        }
 
-		private void Add_TestItem(object sender, RoutedEventArgs e)
-		{
-		}
+        private void TreeView_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+        }
 
-		private void Remove_TestItem(object sender, RoutedEventArgs e)
+        private async void Edit_TestTask(object sender, RoutedEventArgs e)
 		{
-		}
+            if (DataModel.IsRunning)
+            {
+                _ = MessageBox.Show("任务开始后无法修改。", "WARNING");
+            }
+            else
+            {
+                CreateTask dialog = new CreateTask(DataModel, TestTaskTree.SelectedItem as TestTask);
+                _ = await DialogHost.Show(dialog);
+            }
+        }
+
+		private void Remove_TestTask(object sender, RoutedEventArgs e)
+		{
+            if (DataModel.IsRunning)
+            {
+                _ = MessageBox.Show("任务开始后无法修改。", "WARNING");
+            }
+            else
+            {
+                DataModel.Tasks.Remove(TestTaskTree.SelectedItem as TestTask);
+                if (DataModel.Tasks.Count == 0)
+                {
+                    DataContext = null;
+                    DataModel = new MainWindowModel();
+                    DataContext = DataModel;
+                }
+            }
+        }
 
         private void TestItemManagement_MenuItem_Click(object sender, RoutedEventArgs e)
         {
@@ -186,20 +214,38 @@ namespace ReceiverTestApp
         private void StartButton_Click(object sender, RoutedEventArgs e)
         {
             DataModel.IsRunning = true;
-            foreach (var d in DataModel.Task.RunningDevices)
+            if (!DataModel.IsPaused)
             {
-                ThreadPool.QueueUserWorkItem(o => ExecuteTestItem(d));
+                _ = ThreadPool.QueueUserWorkItem(o => ExecuteTestTask());
             }
+            DataModel.IsPaused = false;
         }
 
         private void PauseButton_Click(object sender, RoutedEventArgs e)
         {
             DataModel.IsRunning = false;
+            DataModel.IsPaused = true;
+        }
+
+        private void ExecuteTestTask()
+        {
+            foreach (TestTask task in DataModel.Tasks)
+            {
+                DataModel.Task = task;
+                DataModel.CurInsDevice = task.RunningDevices[0];
+                DataModel.CurStepDevice = task.RunningDevices[0];
+                DataModel.CurSysDevice = task.RunningDevices[0];
+                foreach (RunningDevice d in DataModel.Task.RunningDevices)
+                {
+                    _ = ThreadPool.QueueUserWorkItem(o => ExecuteTestItem(d));
+                }
+                while (DataModel.Task.Progress == 100) Thread.Sleep(100);
+            }
         }
 
         private void ExecuteTestItem(RunningDevice d)
         {
-            string rootPath = DataModel.Task.WorkPath + "\\" + d.Config.Name;
+            string rootPath = DataModel.Task.WorkPath + "\\" + DataModel.Task.Name + "\\" + d.Config.Name;
             if (!Directory.Exists(rootPath))
             {
                 Directory.CreateDirectory(rootPath);
@@ -228,6 +274,7 @@ namespace ReceiverTestApp
                     while (ConfirmDialog.Model.IsShow) Thread.Sleep(100);
                     for (int k = 0; k < item.Steps.Count; k++, item.StepIdx++)
                     {
+                        while (!DataModel.IsRunning) Thread.Sleep(100);
                         if (k != 0) item.Steps[k - 1].IsHighlight = false;
                         item.Steps[k].IsHighlight = true;
                         string[] ins = item.Steps[k].Ins.Split(new char[] { ' ' }, 3);

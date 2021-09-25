@@ -139,11 +139,11 @@
 									<md:PackIcon Kind="Plus"/>
 								</MenuItem.Icon>
 							</MenuItem>
-							<MenuItem Header="关闭规划" Click="Close_MenuItem_Click">
+							<!--<MenuItem Header="关闭规划" Click="Close_MenuItem_Click">
 								<MenuItem.Icon>
 									<md:PackIcon Kind="Close"/>
 								</MenuItem.Icon>
-							</MenuItem>
+							</MenuItem>-->
 							<Separator />
 							<MenuItem Header="退出系统" Click="Exit_MenuItem_Click"/>
 						</MenuItem>
@@ -161,7 +161,7 @@
 						</MenuItem>
 						<MenuItem Header="_帮助">
 							<MenuItem Header="查看帮助" />
-							<MenuItem Header="关于" />
+							<MenuItem Header="关于" Click="About_MenuItem_Click" />
 						</MenuItem>
 					</Menu>
 					<ToolBarTray Grid.Column="1" Visibility="{Binding ShowContent, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -171,7 +171,7 @@
 								<md:PackIcon Kind="PlayBox" />
 							</Button>
 							<Separator/>
-							<Button ToolTip="暂停任务" IsEnabled="{Binding IsRunning}"
+							<Button ToolTip="暂停任务" IsEnabled="{Binding IsPaused}"
 									Click="PauseButton_Click">
 								<md:PackIcon Kind="PauseCircle" />
 							</Button>
@@ -190,19 +190,30 @@
 				</Grid.ColumnDefinitions>
 				<TreeView Name="TestTaskTree" Grid.Column="0" MinWidth="220" 
                       ItemsSource="{Binding Tasks}"
-                      SelectedItemChanged="TreeView_SelectedItemChanged">
+                      SelectedItemChanged="TreeView_SelectedItemChanged"
+					  PreviewMouseRightButtonDown="TreeView_PreviewMouseRightButtonDown">
+					<!--<TreeView.ContextMenu>
+						<ContextMenu>
+							<MenuItem Name="First" Header="编辑" />
+							<MenuItem Name="Second" Header="关闭" />
+						</ContextMenu>
+					</TreeView.ContextMenu>-->
 					<TreeView.Resources>
 						<HierarchicalDataTemplate DataType="{x:Type domain:TestTask}"
                                               ItemsSource="{Binding Templates}">
-							<TextBlock Text="{Binding Name}" Margin="3 2"/>
+							<TextBlock Text="{Binding Name}" Margin="3 2" Tag="Task" />
 						</HierarchicalDataTemplate>
 						<DataTemplate DataType="{x:Type domain:TestItemTemplate}">
-							<TextBlock Text="{Binding Name}" Margin="3 2"/>
+							<TextBlock Text="{Binding Name}" Margin="3 2" Tag="Item" />
 						</DataTemplate>
 						<ContextMenu x:Key ="TaskContext"  StaysOpen="true">
-							<MenuItem Header="Add..." Click="Add_TestItem"/>
-							<MenuItem Header="Rename" Click="Remove_TestItem"/>
+							<MenuItem Header="编辑" Click="Edit_TestTask"/>
+							<MenuItem Header="删除" Click="Remove_TestTask"/>
 						</ContextMenu>
+						<!--<ContextMenu x:Key ="ItemContext"  StaysOpen="true">
+							<MenuItem Header="添加" Click="Add_TestItem"/>
+							<MenuItem Header="删除" Click="Remove_TestItem"/>
+						</ContextMenu>-->
 					</TreeView.Resources>
 				</TreeView>
 				<Grid Grid.Column="1">

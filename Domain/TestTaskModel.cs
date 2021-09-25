@@ -788,7 +788,13 @@ namespace ReceiverTestApp.Domain
 
     public class TestTask : PropertyNotifyObject
 	{
-		public string Name
+        public bool IsSelected
+        {
+            set { this.SetValue(x => x.IsSelected, value); }
+            get { return this.GetValue(x => x.IsSelected); }
+        }
+
+        public string Name
         {
             set { this.SetValue(x => x.Name, value); }
             get { return this.GetValue(x => x.Name); }
@@ -822,9 +828,9 @@ namespace ReceiverTestApp.Domain
 
         public int Total { set; get; }
 
-        public List<TestItemTemplate> Templates { get; }
+        public ObservableCollection<TestItemTemplate> Templates { get; }
 
-        public List<Device> Devices { get; }
+        public ObservableCollection<Device> Devices { get; }
 
         public ObservableCollection<RunningDevice> RunningDevices { get; }
 
@@ -832,8 +838,8 @@ namespace ReceiverTestApp.Domain
 		{
             Name = name;
             WorkPath = path;
-            Templates = templates;
-            Devices = devices;
+            Templates = new ObservableCollection<TestItemTemplate>(templates);
+            Devices = new ObservableCollection<Device>(devices);
             RunningDevices = new ObservableCollection<RunningDevice>();
             foreach (var device in devices)
             {

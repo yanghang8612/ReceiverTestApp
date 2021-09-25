@@ -16,12 +16,11 @@ using System.Windows.Shapes;
 namespace ReceiverTestApp.Dialog
 {
     // 确认信息对话框交互逻辑，传入参数为确认消息内容，单击界面的确认关闭该对话框
-    public partial class ConfirmDialog : UserControl
+    public partial class AboutDialog : UserControl
     {
-        public ConfirmDialog(string name)
+        public AboutDialog()
         {
             InitializeComponent();
-            DataContext = name;
         }
     }
 }
